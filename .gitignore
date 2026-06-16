@@ -1,0 +1,67 @@
+# =========================================
+# IDE
+# =========================================
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+*.iml
+*.ipr
+*.iws
+.classpath
+.project
+.settings/
+.factorypath
+.springBeans
+.sts4-cache
+.apt_generated
+
+# =========================================
+# OS
+# =========================================
+.DS_Store
+Thumbs.db
+
+# =========================================
+# Java / Maven (backend)
+# =========================================
+target/
+*.class
+*.jar
+*.war
+*.nar
+*.ear
+*.log
+*.tmp
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# =========================================
+# Node / Frontend
+# =========================================
+node_modules/
+dist/
+build/
+.vite/
+*.tsbuildinfo
+npm-debug.log*
+
+# =========================================
+# Environment & Secrets
+# =========================================
+.env
+.env.local
+.env.*.local
+*.env
+application-local.yml
+application-local.properties
+
+# =========================================
+# Misc
+# =========================================
+HELP.md
+*.bak
