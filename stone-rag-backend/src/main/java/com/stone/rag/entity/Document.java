@@ -1,8 +1,6 @@
 package com.stone.rag.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
@@ -10,10 +8,7 @@ import java.time.LocalDateTime;
 
 @Data
 @TableName("documents")
-public class Document {
-
-    @TableId(type = IdType.AUTO)
-    private Long id;
+public class Document extends BaseEntity{
 
     @TableField("kb_id")
     private Long kbId;
@@ -46,9 +41,4 @@ public class Document {
     @TableField("tags_json")
     private String tagsJson;
 
-    @TableField("created_at")
-    private LocalDateTime createdAt;
-
-    @TableField("updated_at")
-    private LocalDateTime updatedAt;
 }

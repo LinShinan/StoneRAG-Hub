@@ -66,22 +66,17 @@ const router = createRouter({
 router.beforeEach(async (to, _from, next) => {
   const auth = useAuthStore()
 
-  // In dev mode, auto-activate if no session exists
-  if (import.meta.env.DEV && !auth.token && !auth.devMode) {
-    auth.enableDevMode()
-  }
-
-  // Try to fetch user if we have a token but no user
-  if (auth.token && !auth.user && !auth.devMode) {
+  // Try to fetch user if we have a token but no user (e.g. after page refresh)
+  if (auth.token && !auth.user) {
     try {
       await auth.fetchMe()
     } catch {
-      // fetchMe handles logout internally; dev mode auto-activates on failure
+      // fetchMe handles 40002 internally — clears token and redirects to login
     }
   }
 
-  // Guest-only pages (login) — redirect to dashboard if logged in (skip in dev mode)
-  if (to.meta.guest && auth.isLoggedIn && !auth.devMode) {
+  // Guest-only pages (login) — redirect to dashboard if already logged in
+  if (to.meta.guest && auth.isLoggedIn) {
     return next('/dashboard')
   }
 

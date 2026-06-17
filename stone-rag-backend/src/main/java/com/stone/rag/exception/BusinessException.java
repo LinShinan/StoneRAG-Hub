@@ -1,19 +1,20 @@
 package com.stone.rag.exception;
 
+import com.stone.rag.common.ErrorCode;
 import lombok.Getter;
 
 @Getter
-public class BusinessException extends RuntimeException{
+public class BusinessException extends RuntimeException {
 
     private final Integer code;
 
-    public BusinessException(String message){
+    public BusinessException(String message) {
         super(message);
-        this.code=500;
+        this.code = ErrorCode.SERVER_ERROR.getCode();
     }
 
-    public BusinessException(Integer code,String message){
+    public BusinessException(ErrorCode errorCode, String message) {
         super(message);
-        this.code=code;
+        this.code = errorCode.getCode();
     }
 }

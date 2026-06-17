@@ -82,17 +82,8 @@ export async function request<T = any>(
     fetchOptions.body = JSON.stringify(body)
   }
 
-  // Execute — in dev mode, catch network errors gracefully so UI can render
-  let response: Response
-  try {
-    response = await fetch(url, fetchOptions)
-  } catch (err: any) {
-    if (import.meta.env.DEV) {
-      // Backend not running — return empty success so pages render empty states
-      return { code: 200, message: 'dev: no backend', data: null as any as T }
-    }
-    throw err
-  }
+  // Execute
+  const response = await fetch(url, fetchOptions)
 
   if (rawResponse) {
     // Return raw response (for SSE streaming)

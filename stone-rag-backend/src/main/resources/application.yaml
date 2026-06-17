@@ -2,7 +2,7 @@ spring:
   application:
     name: stone-rag-backend
   datasource:
-    url: jdbc:mysql://localhost:3306/knowledge_base?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://localhost:3306/knowledge_base?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
     username: root
     password: 123456
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -21,3 +21,7 @@ springdoc:
     - group: 'default'
       paths-to-match: '/**'
       packages-to-scan: com.stone.rag.controller
+
+jwt:
+  secret: HbYuxMkih2DSo/zCsd5HT5SyIxQXkdVpMynyHVajYJc=
+  expiration: 604800000

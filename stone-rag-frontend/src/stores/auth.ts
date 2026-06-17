@@ -5,27 +5,12 @@ import { authApi } from '@/api/auth'
 import { setToken, clearToken } from '@/api/client'
 import { ApiError } from '@/api/client'
 
-// Dev mode mock user — used when backend is unavailable
-const DEV_USER: User = {
-  id: 1,
-  username: 'Dev',
-  email: 'dev@localhost',
-  avatar_url: null,
-  role: 'user',
-}
-
-const isDev = import.meta.env.DEV
-
 export const useAuthStore = defineStore('auth', () => {
   const user = ref<User | null>(null)
   const token = ref<string | null>(localStorage.getItem('auth_token'))
   const loading = ref(false)
-  const devMode = ref(false)
 
-  const isLoggedIn = computed(() => {
-    if (devMode.value) return true
-    return !!token.value && !!user.value
-  })
+  const isLoggedIn = computed(() => !!token.value && !!user.value)
   const isAdmin = computed(() => user.value?.role === 'admin')
 
   async function login(payload: LoginPayload) {
@@ -35,7 +20,7 @@ export const useAuthStore = defineStore('auth', () => {
       const data = res.data as AuthData
       token.value = data.token
       setToken(data.token)
-      // Fetch full user profile
+      // Fetch full user profile after login
       await fetchMe()
       return data
     } finally {
@@ -58,34 +43,24 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function fetchMe() {
-    if (devMode.value) return
     if (!token.value) return
     try {
       const res = await authApi.me()
       user.value = res.data as User
     } catch (e) {
+      // 40002: Token invalid/expired → auto logout
       if (e instanceof ApiError && e.code === 40002) {
         logout()
       }
-      // If backend is unreachable in dev, auto-enable dev mode
-      if (isDev) {
-        enableDevMode()
-      }
+      throw e
     }
-  }
-
-  function enableDevMode() {
-    devMode.value = true
-    token.value = 'dev-mode-token'
-    user.value = DEV_USER
-    setToken('dev-mode-token')
   }
 
   function logout() {
     user.value = null
     token.value = null
-    devMode.value = false
     clearToken()
+    // Best-effort server logout
     authApi.logout().catch(() => {})
   }
 
@@ -95,11 +70,9 @@ export const useAuthStore = defineStore('auth', () => {
     loading,
     isLoggedIn,
     isAdmin,
-    devMode,
     login,
     register,
     fetchMe,
     logout,
-    enableDevMode,
   }
 })
