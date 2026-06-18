@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 import { kbApi } from '@/api/knowledgeBases'
@@ -21,6 +21,8 @@ import {
   Edit3,
   Trash2,
   FolderOpen,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-vue-next'
 import { reactive } from 'vue'
 
@@ -31,13 +33,21 @@ const knowledgeBases = ref<KnowledgeBase[]>([])
 const loading = ref(true)
 const searchKeyword = ref('')
 const total = ref(0)
+const page = ref(1)
+const pageSize = ref(9)
 
 // Create KB modal
 const showCreateModal = ref(false)
 const createLoading = ref(false)
+// ── Icon picker ──
+const iconOptions = ['📁', '📚', '📝', '💡', '🔬', '📊', '🗂️', '💼', '🎯', '🚀', '⚙️', '🔒', '🌐', '📖', '🏗️', '🤖']
+const showIconPicker = ref(false)
+const showEditIconPicker = ref(false)
+
 const createForm = reactive<CreateKBPayload>({
   name: '',
   description: '',
+  icon: '📁',
   embedding_model: 'text-embedding-3-small',
   chunk_size: 500,
   chunk_overlap: 50,
@@ -47,7 +57,7 @@ const createForm = reactive<CreateKBPayload>({
 const showEditModal = ref(false)
 const editLoading = ref(false)
 const editingKB = ref<KnowledgeBase | null>(null)
-const editForm = reactive({ name: '', description: '' })
+const editForm = reactive({ name: '', description: '', icon: '📁' })
 
 // Delete KB confirmation
 const showDeleteModal = ref(false)
@@ -60,15 +70,25 @@ const contextMenuKB = ref<number | null>(null)
 async function fetchKnowledgeBases() {
   loading.value = true
   try {
+    // AbortController for timeout — prevents infinite loading
+    const ctrl = new AbortController()
+    const timer = setTimeout(() => ctrl.abort(), 15000)
+
     const res = await kbApi.list({
-      size: 50,
+      page: page.value,
+      size: pageSize.value,
       keyword: searchKeyword.value || undefined,
-    })
-    knowledgeBases.value = res.data.items
-    total.value = res.data.total
-  } catch (e) {
-    if (!(e instanceof ApiError && e.code === 40002)) {
-      app.showToast('加载知识库失败', 'error')
+    }, ctrl.signal)
+
+    clearTimeout(timer)
+    knowledgeBases.value = res.data.items || []
+    total.value = res.data.total || 0
+  } catch (e: any) {
+    if (e instanceof ApiError && e.code === 40002) return
+    if (e?.name === 'AbortError') {
+      app.showToast('请求超时，请检查后端是否启动', 'warning')
+    } else {
+      app.showToast('加载知识库失败：' + (e.message || '未知错误'), 'error')
     }
   } finally {
     loading.value = false
@@ -83,6 +103,7 @@ function openKnowledgeBase(kb: KnowledgeBase) {
 function openCreateModal() {
   createForm.name = ''
   createForm.description = ''
+  createForm.icon = '📁'
   showCreateModal.value = true
 }
 
@@ -93,6 +114,7 @@ async function handleCreate() {
     await kbApi.create({
       name: createForm.name.trim(),
       description: createForm.description?.trim() || undefined,
+      icon: createForm.icon,
       embedding_model: createForm.embedding_model,
       chunk_size: createForm.chunk_size,
       chunk_overlap: createForm.chunk_overlap,
@@ -113,6 +135,7 @@ function openEditModal(kb: KnowledgeBase) {
   editingKB.value = kb
   editForm.name = kb.name
   editForm.description = kb.description || ''
+  editForm.icon = kb.icon || '📁'
   showEditModal.value = true
   contextMenuKB.value = null
 }
@@ -124,6 +147,7 @@ async function handleEdit() {
     await kbApi.update(editingKB.value.id, {
       name: editForm.name.trim(),
       description: editForm.description.trim(),
+      icon: editForm.icon,
     })
     showEditModal.value = false
     app.showToast('知识库已更新', 'success')
@@ -159,11 +183,20 @@ async function handleDelete() {
   }
 }
 
+// ── Pagination ──
+function changePage(p: number) {
+  page.value = p
+  fetchKnowledgeBases()
+}
+
+const totalPages = computed(() => Math.ceil(total.value / pageSize.value))
+
 // ── Search ──
 let searchTimer: ReturnType<typeof setTimeout>
 function onSearchInput() {
   clearTimeout(searchTimer)
   searchTimer = setTimeout(() => {
+    page.value = 1 // reset to first page on new search
     fetchKnowledgeBases()
   }, 300)
 }
@@ -295,6 +328,45 @@ onMounted(() => {
       </div>
     </div>
 
+    <!-- ─── Pagination ─── -->
+    <div
+      v-if="totalPages > 1"
+      class="flex items-center justify-center gap-2 mt-8 pt-6 border-t border-gpt-border"
+    >
+      <button
+        @click="changePage(page - 1)"
+        :disabled="page <= 1"
+        class="p-2 rounded-lg border border-gpt-border text-gpt-muted hover:text-gpt-text hover:bg-white/5 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+      >
+        <ChevronLeft :size="16" />
+      </button>
+
+      <template v-for="p in totalPages" :key="p">
+        <button
+          v-if="p === 1 || p === totalPages || Math.abs(p - page) <= 1"
+          @click="changePage(p)"
+          :class="p === page
+            ? 'bg-blue-500 text-white shadow-glow'
+            : 'border border-gpt-border text-gpt-muted hover:text-gpt-text hover:bg-white/5'"
+          class="min-w-[36px] h-9 rounded-lg text-sm font-medium transition-all"
+        >
+          {{ p }}
+        </button>
+        <span
+          v-else-if="Math.abs(p - page) === 2"
+          class="text-gpt-dim text-sm px-1"
+        >...</span>
+      </template>
+
+      <button
+        @click="changePage(page + 1)"
+        :disabled="page >= totalPages"
+        class="p-2 rounded-lg border border-gpt-border text-gpt-muted hover:text-gpt-text hover:bg-white/5 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+      >
+        <ChevronRight :size="16" />
+      </button>
+    </div>
+
     <!-- ─── Create KB Modal ─── -->
     <Modal v-model:open="showCreateModal" title="新建知识库" max-width="max-w-md">
       <div class="space-y-4">
@@ -314,6 +386,38 @@ onMounted(() => {
             rows="2"
             placeholder="简单描述这个知识库的内容..."
             class="w-full px-4 py-2.5 bg-gpt-bg border border-gpt-border rounded-xl text-sm text-gpt-text placeholder:text-gpt-dim focus:outline-none focus:border-blue-500/50 transition-all resize-none"
+          />
+        </div>
+        <!-- Icon picker -->
+        <div class="space-y-1.5">
+          <label class="text-sm font-medium text-gpt-text">图标</label>
+          <div class="relative">
+            <button
+              @click="showIconPicker = !showIconPicker"
+              class="w-full flex items-center gap-2 px-4 py-2.5 bg-gpt-bg border border-gpt-border rounded-xl text-sm text-gpt-text hover:border-blue-500/50 transition-all"
+            >
+              <span class="text-xl">{{ createForm.icon }}</span>
+              <span class="text-gpt-muted">{{ createForm.icon === '📁' ? '文件夹' : createForm.icon === '📚' ? '书籍' : createForm.icon === '📝' ? '笔记' : createForm.icon === '💡' ? '灵感' : createForm.icon === '🔬' ? '研究' : createForm.icon === '📊' ? '数据' : createForm.icon === '🗂️' ? '归档' : createForm.icon === '💼' ? '工作' : createForm.icon === '🎯' ? '目标' : createForm.icon === '🚀' ? '火箭' : createForm.icon === '⚙️' ? '工程' : createForm.icon === '🔒' ? '私密' : createForm.icon === '🌐' ? '网络' : createForm.icon === '📖' ? '手册' : createForm.icon === '🏗️' ? '架构' : createForm.icon === '🤖' ? 'AI' : '自定义' }}</span>
+            </button>
+            <!-- Emoji grid -->
+            <div v-if="showIconPicker" class="absolute top-full mt-1 w-full glass-card p-2 grid grid-cols-8 gap-1 z-20 animate-slide-down">
+              <button
+                v-for="icon in iconOptions"
+                :key="icon"
+                @click="createForm.icon = icon; showIconPicker = false"
+                class="w-9 h-9 flex items-center justify-center rounded-lg text-lg hover:bg-white/10 transition-colors"
+                :class="{ 'bg-blue-500/20 ring-1 ring-blue-500/50': createForm.icon === icon }"
+              >{{ icon }}</button>
+            </div>
+          </div>
+          <!-- Custom emoji input -->
+          <input
+            v-model="createForm.icon"
+            type="text"
+            maxlength="2"
+            placeholder="或直接输入 emoji"
+            class="w-full px-4 py-2 bg-gpt-bg border border-gpt-border rounded-xl text-sm text-gpt-text placeholder:text-gpt-dim focus:outline-none focus:border-blue-500/50 transition-all"
+            @focus="showIconPicker = false"
           />
         </div>
         <div class="grid grid-cols-2 gap-3">
@@ -362,6 +466,36 @@ onMounted(() => {
             v-model="editForm.description"
             rows="2"
             class="w-full px-4 py-2.5 bg-gpt-bg border border-gpt-border rounded-xl text-sm text-gpt-text focus:outline-none focus:border-blue-500/50 transition-all resize-none"
+          />
+        </div>
+        <!-- Icon picker (edit) -->
+        <div class="space-y-1.5">
+          <label class="text-sm font-medium text-gpt-text">图标</label>
+          <div class="relative">
+            <button
+              @click="showEditIconPicker = !showEditIconPicker"
+              class="w-full flex items-center gap-2 px-4 py-2.5 bg-gpt-bg border border-gpt-border rounded-xl text-sm text-gpt-text hover:border-blue-500/50 transition-all"
+            >
+              <span class="text-xl">{{ editForm.icon }}</span>
+              <span class="text-gpt-muted text-xs">点击更换</span>
+            </button>
+            <div v-if="showEditIconPicker" class="absolute top-full mt-1 w-full glass-card p-2 grid grid-cols-8 gap-1 z-20 animate-slide-down">
+              <button
+                v-for="icon in iconOptions"
+                :key="icon"
+                @click="editForm.icon = icon; showEditIconPicker = false"
+                class="w-9 h-9 flex items-center justify-center rounded-lg text-lg hover:bg-white/10 transition-colors"
+                :class="{ 'bg-blue-500/20 ring-1 ring-blue-500/50': editForm.icon === icon }"
+              >{{ icon }}</button>
+            </div>
+          </div>
+          <input
+            v-model="editForm.icon"
+            type="text"
+            maxlength="2"
+            placeholder="或直接输入 emoji"
+            class="w-full px-4 py-2 bg-gpt-bg border border-gpt-border rounded-xl text-sm text-gpt-text placeholder:text-gpt-dim focus:outline-none focus:border-blue-500/50 transition-all"
+            @focus="showEditIconPicker = false"
           />
         </div>
         <button

@@ -9,8 +9,8 @@ import type {
 } from '@/types'
 
 export const kbApi = {
-  list(params?: { page?: number; size?: number; keyword?: string }) {
-    return api.get<PaginatedData<KnowledgeBase>>('/knowledge-bases', params)
+  list(params?: { page?: number; size?: number; keyword?: string }, signal?: AbortSignal) {
+    return api.get<PaginatedData<KnowledgeBase>>('/knowledge-bases', params, signal)
   },
 
   get(id: number) {

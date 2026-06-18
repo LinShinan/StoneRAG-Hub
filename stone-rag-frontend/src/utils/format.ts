@@ -11,14 +11,16 @@ export function formatFileSize(bytes: number): string {
 /**
  * Format a number with thousand separators.
  */
-export function formatNumber(n: number): string {
+export function formatNumber(n: number | null | undefined): string {
+  if (n == null || isNaN(n)) return '0'
   return n.toLocaleString('zh-CN')
 }
 
 /**
  * Format a character count — if > 10000, show in 万.
  */
-export function formatCharCount(n: number): string {
+export function formatCharCount(n: number | null | undefined): string {
+  if (n == null || isNaN(n)) return '0'
   if (n >= 10000) {
     return `${(n / 10000).toFixed(1)} 万`
   }

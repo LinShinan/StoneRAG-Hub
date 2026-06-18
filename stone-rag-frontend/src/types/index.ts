@@ -63,6 +63,7 @@ export interface KnowledgeBaseStats {
 export interface CreateKBPayload {
   name: string
   description?: string
+  icon?: string
   embedding_model?: string
   chunk_size?: number
   chunk_overlap?: number
@@ -71,6 +72,7 @@ export interface CreateKBPayload {
 export interface UpdateKBPayload {
   name?: string
   description?: string
+  icon?: string
 }
 
 // ── Document ──
