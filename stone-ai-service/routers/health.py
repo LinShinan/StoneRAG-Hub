@@ -1,16 +1,17 @@
 from fastapi import APIRouter
+from chromadb import HttpClient
 
-from schemas.common import ApiResponse
+from config import settings
+from schemas.common import Result
 
 router = APIRouter(tags=["health"])
 
-
-@router.get("/health", response_model=ApiResponse)
+@router.get("/health")
 async def health_check():
-    """健康检查 —— Java 后端启动时调用此接口确认 Python 服务就绪"""
-    return ApiResponse(
-        data={
-            "status": "ok",
-            "chromadb": "not_connected",
-        }
-    )
+    try:
+        client = HttpClient(host=settings.chromadb_host, port=settings.chromadb_port)
+        client.heartbeat()
+        return Result.ok(data={"status":"ok","chromadb":"connected"})
+    except Exception as e:
+        return Result.ok(data={"status":"ok","chromadb":"disconnected"})
+

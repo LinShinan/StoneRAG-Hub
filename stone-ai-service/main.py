@@ -1,24 +1,30 @@
-from contextlib import asynccontextmanager
+import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from config import settings
+from exceptions.handlers import register_exception_handlers
 from routers.health import router as health_router
+from routers.rag import router as rag_router
+
+logging.basicConfig(
+    level=settings.log_level,
+    format="%(asctime)s | %(levelname)-7s | %(name)s | %(message)s",
+    datefmt="%H:%M:%S",
+)
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # 启动时
-    yield
-    # 关闭时（后面可以在这里清理 ChromaDB 连接等）
+
 
 
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
-    lifespan=lifespan,
 )
+
+# 全局异常处理
+register_exception_handlers(app)
 
 # CORS —— 允许前端跨域
 app.add_middleware(
@@ -31,6 +37,8 @@ app.add_middleware(
 
 # 挂载路由
 app.include_router(health_router)
+app.include_router(rag_router)
+
 
 # 根路径
 @app.get("/")

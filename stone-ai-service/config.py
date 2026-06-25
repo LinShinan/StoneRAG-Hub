@@ -5,11 +5,11 @@ class Settings(BaseSettings):
     # --- 服务 ---
     app_name: str = "Stone AI Service"
     app_version: str = "0.1.0"
-    debug: bool = True
+    log_level: str = "INFO"  # DEBUG | INFO | WARNING | ERROR
 
     # --- ChromaDB ---
     chromadb_host: str = "localhost"
-    chromadb_port: int = 8000
+    chromadb_port: int = 8001
     chromadb_collection: str = "stone_rag"
 
     # --- 阿里云百炼 API（兼容 OpenAI SDK） ---
@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     # --- 文档分块 ---
     chunk_size: int = 500
     chunk_overlap: int = 50
+    chunk_separators: list[str] = ["\n\n", "\n", "。", "！", "？", "；", ".","!","?",";"," ", ""]
 
     # --- RAG ---
     top_k: int = 5
