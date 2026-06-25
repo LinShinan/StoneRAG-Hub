@@ -3,25 +3,35 @@ package com.stone.rag.controller;
 import com.stone.rag.common.Result;
 import com.stone.rag.dto.KnowledgeBaseCreateDTO;
 import com.stone.rag.dto.KnowledgeBaseUpdateDTO;
+import com.stone.rag.entity.Document;
 import com.stone.rag.entity.KnowledgeBase;
+import com.stone.rag.mapper.DocumentMapper;
+import com.stone.rag.service.DocumentService;
 import com.stone.rag.service.KnowledgeBaseService;
 import com.stone.rag.vo.KnowledgeBaseStatsVO;
 import com.stone.rag.vo.PageVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+@RequiredArgsConstructor
 @Tag(name="知识库")
 @Slf4j
 @RestController
 @RequestMapping("/api/knowledge-bases")
 public class KnowledgeBaseController {
 
-    @Autowired
-    private KnowledgeBaseService knowledgeBaseService;
+
+    private final KnowledgeBaseService knowledgeBaseService;
+
+
+    private final DocumentService documentService;
+
 
     /**
      * 创建知识库
@@ -97,6 +107,11 @@ public class KnowledgeBaseController {
         return Result.success();
     }
 
+    /**
+     * 获取知识库统计信息
+     * @param id
+     * @return
+     */
     @Operation(summary="知识库统计")
     @GetMapping("/{id}/stats")
     public Result<KnowledgeBaseStatsVO> statistics(@PathVariable Long id){
@@ -104,6 +119,45 @@ public class KnowledgeBaseController {
         log.info("获取知识库id={}统计信息成功：{}", id, vo);
         return Result.success(vo);
     }
+
+
+    /**
+     * 上传文件并加载
+     * @param kbId
+     * @param file
+     * @return
+     */
+    @Operation(summary="上传文件", description = "支持docx,pdf,txt")
+    @PostMapping(value = "/{kbId}/documents/upload",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public Result<Document> uploadDocuments(@PathVariable Long kbId, @RequestParam("file") MultipartFile file){
+        Document document = documentService.upload(kbId,file);
+        log.info("上传文件成功：{}", document);
+        return Result.success(document);
+    }
+
+    /**
+     * 获取文件列表
+     * @param kbId
+     * @param page
+     * @param size
+     * @param status
+     * @param fileType
+     * @return
+     */
+    @Operation(summary="获取文件列表")
+    @GetMapping("/{kbId}/documents")
+    public Result<PageVO<Document>> listDocuments(
+            @PathVariable("kbId") Long kbId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String fileType
+    ){
+        PageVO<Document> vo = documentService.listDocuments(kbId,page,size,status,fileType);
+        return Result.success(vo);
+    }
+
+
 
 
 }

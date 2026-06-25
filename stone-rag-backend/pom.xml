@@ -83,6 +83,12 @@
             <version>0.10.2</version>
         </dependency>
 
+        <!-- 为了引入WebClient -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
+        </dependency>
+
     </dependencies>
 
     <build>
