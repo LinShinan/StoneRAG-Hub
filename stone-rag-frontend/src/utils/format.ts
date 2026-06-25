@@ -88,7 +88,7 @@ export function getStatusInfo(status: string): { label: string; color: string; b
     parsing: { label: '解析中', color: 'text-blue-400', bg: 'bg-blue-400/10' },
     embedding: { label: '向量化中', color: 'text-purple-400', bg: 'bg-purple-400/10' },
     ready: { label: '就绪', color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
-    error: { label: '失败', color: 'text-red-400', bg: 'bg-red-400/10' },
+    failed: { label: '失败', color: 'text-red-400', bg: 'bg-red-400/10' },
   }
   return map[status] || { label: '未知', color: 'text-gray-400', bg: 'bg-gray-400/10' }
 }

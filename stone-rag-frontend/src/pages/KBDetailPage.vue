@@ -269,7 +269,7 @@ function pieConicGradient(): string {
 onMounted(() => {
   fetchAll()
   // Check if there are processing docs
-  if (documents.value.some((d) => d.status !== 'ready' && d.status !== 'error')) {
+  if (documents.value.some((d) => d.status !== 'ready' && d.status !== 'failed')) {
     startPolling()
   }
 })
@@ -354,7 +354,7 @@ onUnmounted(() => {
                   {{ getFileIcon(doc.file_type) }}
                 </div>
                 <div
-                  v-else-if="doc.status === 'error'"
+                  v-else-if="doc.status === 'failed'"
                   class="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center"
                 >
                   <AlertCircle :size="20" class="text-red-400" />
@@ -386,7 +386,7 @@ onUnmounted(() => {
                 </div>
                 <!-- Error message -->
                 <p
-                  v-if="doc.status === 'error' && doc.error_msg"
+                  v-if="doc.status === 'failed' && doc.error_msg"
                   class="text-xs text-red-400 mt-1 truncate"
                 >
                   {{ doc.error_msg }}
@@ -396,7 +396,7 @@ onUnmounted(() => {
               <!-- Actions -->
               <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
                 <button
-                  v-if="doc.status === 'error'"
+                  v-if="doc.status === 'failed'"
                   @click.stop="reprocessDoc(doc)"
                   class="p-1.5 rounded-lg hover:bg-white/5 text-gpt-muted hover:text-blue-400 transition-colors"
                   title="重新处理"

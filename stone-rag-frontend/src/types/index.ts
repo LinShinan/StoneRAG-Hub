@@ -76,7 +76,7 @@ export interface UpdateKBPayload {
 }
 
 // ── Document ──
-export type DocStatus = 'uploading' | 'parsing' | 'embedding' | 'ready' | 'error'
+export type DocStatus = 'uploading' | 'parsing' | 'embedding' | 'ready' | 'failed'
 export type DocFileType = 'pdf' | 'docx' | 'md' | 'txt' | 'url'
 
 export interface Document {
